@@ -6,18 +6,19 @@ import ScanScreem from "./src/components/ScanScreem"
 
 const AppNavigator = createStackNavigator(
   {
-    "Home": {
-      screen: Home,
-      navigationOptions: {
-        headerShown: false,
-      }
-    },
     "ScanScreem": {
       screen: ScanScreem,
       navigationOptions: {
         headerShown: false,
       }
     },
+    "Home": {
+      screen: Home,
+      navigationOptions: {
+        headerShown: false,
+      }
+    },
+    
   }
 )
 

@@ -8,12 +8,17 @@ export default class ScanText extends React.Component {
         super(props)
 
         const { name } = props
+        console.log(name)
+    }
+
+    replaceScreem() {
+        this.props.navigation.replace("ScanScreem")
     }
 
     render() {
         return (
-            <Pressable onPress={() => { this.props.naviation.replace("ScanScreem") }}>
-                <Text style={styles.scanText}>Escanear: {"nome"}</Text>
+            <Pressable onPress={() => { this.replaceScreem() }}>
+                <Text style={styles.scanText}>Escanear: {"teste"}</Text>
             </Pressable >
         )
     }

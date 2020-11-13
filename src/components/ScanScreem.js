@@ -39,14 +39,14 @@ const styles = StyleSheet.create({
     infoButton: {
         top: -20,
         fontSize: 24,
-        borderTopRightRadius: 5,
-        borderTopLeftRadius: 5
+        borderTopRightRadius: 10,
+        borderTopLeftRadius: 10
     },
     cancelButton: {
         fontSize: 48,
         fontWeight: "bold",
-        borderBottomLeftRadius: 5,
-        borderBottomRightRadius: 5,
+        borderBottomLeftRadius: 10,
+        borderBottomRightRadius: 10,
     },
     rssiText: {
         position: "relative",
