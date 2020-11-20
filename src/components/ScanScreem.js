@@ -1,9 +1,25 @@
 import React from "react"
-import { View, StyleSheet, Text } from "react-native"
+import { View, StyleSheet, Text, Pressable, DeviceEventEmitter } from "react-native"
 
 import { orange, pink } from "./Colors"
+import Beacons from "react-native-beacons-manager"
 
 export default class ScanScreem extends React.Component {
+
+    async componentDidMount() {
+        Beacons.detectEddystoneUID();
+
+        try {
+            await Beacons.startRangingBeaconsInRegion('REGION1')
+            console.log(`Beacons ranging started succesfully!`)
+        } catch (err) {
+            console.log(`Beacons ranging not started, error: ${error}`)
+        }
+
+        DeviceEventEmitter.addListener('beaconsDidRange', (data) => {
+            console.log("achou:", data.beacons)
+        })
+    }
 
     render() {
         return (
@@ -12,8 +28,12 @@ export default class ScanScreem extends React.Component {
                     <Text style={styles.rssiText}>-80</Text>
                 </View>
                 <View>
-                    <Text style={[styles.button, styles.infoButton]}>Escanear: {"teste"}</Text>
-                    <Text style={[styles.button, styles.cancelButton]}>Cancelar</Text>
+                    <Pressable>
+                        <Text style={[styles.button, styles.infoButton]}>Escanear: {"teste"}</Text>
+                    </Pressable>
+                    <Pressable>
+                        <Text style={[styles.button, styles.cancelButton]}>Cancelar</Text>
+                    </Pressable>
                 </View>
             </View>
         )
