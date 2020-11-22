@@ -1,24 +1,78 @@
 import React from "react"
-import { View, StyleSheet, Text, Pressable, DeviceEventEmitter } from "react-native"
+import {
+    View, StyleSheet, Text, Pressable, DeviceEventEmitter,
+    PermissionsAndroid
+} from "react-native"
 
 import { orange, pink } from "./Colors"
-import Beacons from "react-native-beacons-manager"
+import Eddystone from "@lg2/react-native-eddystone"
 
 export default class ScanScreem extends React.Component {
 
-    async componentDidMount() {
-        Beacons.detectEddystoneUID();
+    componentDidMount() {
+        this.getAccessFineLocation()
+        this.getAccessCoarseLocation();
 
+        Eddystone.addListener("onUIDFrame", this.UID);
+
+
+    }
+
+    async getAccessCoarseLocation() {
         try {
-            await Beacons.startRangingBeaconsInRegion('REGION1')
-            console.log(`Beacons ranging started succesfully!`)
+            const granted = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+                {
+                    title: "ACCESS_COARSE_LOCATION",
+                    message: "ACCESS_COARSE_LOCATION",
+                    buttonNeutral: "Ask Me Later",
+                    buttonNegative: "Cancel",
+                    buttonPositive: "OK"
+                }
+            );
+            if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                console.log("You can use the ACCESS_COARSE_LOCATION");
+            } else {
+                console.log("ACCESS_COARSE_LOCATION permission denied");
+            }
         } catch (err) {
-            console.log(`Beacons ranging not started, error: ${error}`)
+            console.warn(err);
         }
+    }
 
-        DeviceEventEmitter.addListener('beaconsDidRange', (data) => {
-            console.log("achou:", data.beacons)
-        })
+    async getAccessFineLocation() {
+        try {
+            const granted = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                {
+                    title: "ACCESS_FINE_LOCATION",
+                    message: "ACCESS_FINE_LOCATION",
+                    buttonNeutral: "Ask Me Later",
+                    buttonNegative: "Cancel",
+                    buttonPositive: "OK"
+                }
+            );
+            if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                console.log("You can use the ACCESS_FINE_LOCATION");
+            } else {
+                console.log("ACCESS_FINE_LOCATION permission denied");
+            }
+        } catch (err) {
+            console.warn(err);
+        }
+    }
+
+    startScanning() {
+        Eddystone.startScanning()
+    }
+
+    stopScanning() {
+        Eddystone.stopScanning()
+    }
+
+    UID(beacon) {
+        console.log("leu um beacon")
+        console.log(beacon)
     }
 
     render() {
@@ -28,10 +82,12 @@ export default class ScanScreem extends React.Component {
                     <Text style={styles.rssiText}>-80</Text>
                 </View>
                 <View>
-                    <Pressable>
+                    <Pressable
+                        onPress={() => { this.startScanning() }}>
                         <Text style={[styles.button, styles.infoButton]}>Escanear: {"teste"}</Text>
                     </Pressable>
-                    <Pressable>
+                    <Pressable
+                        onPress={() => { this.stopScanning() }}>
                         <Text style={[styles.button, styles.cancelButton]}>Cancelar</Text>
                     </Pressable>
                 </View>
