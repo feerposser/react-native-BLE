@@ -9,13 +9,48 @@ import Eddystone from "@lg2/react-native-eddystone"
 
 export default class ScanScreem extends React.Component {
 
+    constructor(props) {
+        super(props)
+
+        this.state = {
+            rssi: 0,
+            rssis: [],
+            averageRssi: -1000,
+            approaching: false,
+            scaning: false
+        }
+    }
+
     componentDidMount() {
         this.getAccessFineLocation()
-        this.getAccessCoarseLocation();
+        this.getAccessCoarseLocation()
 
-        Eddystone.addListener("onUIDFrame", this.UID);
+        Eddystone.addListener("onUIDFrame", this.UID) 
 
+        
+    }
 
+    startScanning() {
+        console.log("escaneando")
+        Eddystone.startScanning()
+        // this.doTheBlaBlaBla()
+    }
+
+    stopScanning() {
+        Eddystone.stopScanning()
+    }
+
+    addRssisValue(value){
+        if (this.state.rssis.length <= 10) {
+            this.setState({ rssis: this.state.rssis.push(value) })
+        }
+        console.log(this.state.rssis)
+    }
+
+    UID(beacon) {
+        console.log(beacon.id, beacon.rssi)
+        console.log(this.state.rssi)
+        this.addRssisValue(beacon.rssi)
     }
 
     async getAccessCoarseLocation() {
@@ -62,28 +97,52 @@ export default class ScanScreem extends React.Component {
         }
     }
 
-    startScanning() {
-        Eddystone.startScanning()
+    getRssisAverage() {
+        let rssis = this.state.rssis.sort((a, b) => a - b)
+
+        let lowMiddle = Math.floor((rssis.length - 1) / 2)
+        let highMiddle = Math.ceil((values.length - 1) / 2)
+        let median = (rssis[lowMiddle] + rssis[highMiddle]) / 2
+
+        return median
     }
 
-    stopScanning() {
-        Eddystone.stopScanning()
+    clearRssis() {
+        this.setState({rssis: []})
     }
 
-    UID(beacon) {
-        console.log("leu um beacon")
-        console.log(beacon)
+    doTheBlaBlaBla(time=5000) {
+        setInterval(() => {
+            console.log("rodando o setInverval")
+            let lastAverageRssi = this.state.averageRssi
+            this.setState({averageRssi: this.getRssisAverage()})
+            
+            // se a mediada de rssis anterior for maior que a atual, então não está se aproximando
+            if (lastAverageRssi > this.state.averageRssi) {
+                this.setState({approaching: false})
+            } else {
+                this.setState({approaching: true})
+            }
+            this.clearRssis()
+        }, time);
+    }
+
+    getAproaching() {
+        if (this.state.approaching) {
+            return "aproximando"
+        }
+        return "não aproximou"
     }
 
     render() {
         return (
             <View>
                 <View style={styles.header}>
-                    <Text style={styles.rssiText}>-80</Text>
+                    <Text style={styles.rssiText}>{this.getAproaching()}</Text>
                 </View>
                 <View>
                     <Pressable
-                        onPress={() => { this.startScanning() }}>
+                        onPress={() => this.startScanning() }>
                         <Text style={[styles.button, styles.infoButton]}>Escanear: {"teste"}</Text>
                     </Pressable>
                     <Pressable
