@@ -1,7 +1,7 @@
 import React from "react"
 import {
-    View, StyleSheet, Text, Pressable, DeviceEventEmitter,
-    PermissionsAndroid
+    View, StyleSheet, Text, DeviceEventEmitter,
+    PermissionsAndroid, TouchableOpacity
 } from "react-native"
 
 import { orange, pink } from "./Colors"
@@ -16,41 +16,39 @@ export default class ScanScreem extends React.Component {
             rssi: 0,
             rssis: [],
             averageRssi: -1000,
-            approaching: false,
+            approachingScreem: "",
             scaning: false
         }
+        this.onUID = this.onUID.bind(this)
+        this.addRssisValue = this.addRssisValue.bind(this)
+        this.doTheBlaBlaBla()
     }
 
-    componentDidMount() {
-        this.getAccessFineLocation()
-        this.getAccessCoarseLocation()
+    async componentDidMount() {
+        await this.getAccessFineLocation()
+        await this.getAccessCoarseLocation()
 
-        Eddystone.addListener("onUIDFrame", this.UID) 
-
-        
+        Eddystone.addListener("onUIDFrame", this.onUID)
     }
 
-    startScanning() {
-        console.log("escaneando")
-        Eddystone.startScanning()
-        // this.doTheBlaBlaBla()
-    }
-
-    stopScanning() {
-        Eddystone.stopScanning()
-    }
-
-    addRssisValue(value){
-        if (this.state.rssis.length <= 10) {
-            this.setState({ rssis: this.state.rssis.push(value) })
-        }
-        console.log(this.state.rssis)
-    }
-
-    UID(beacon) {
-        console.log(beacon.id, beacon.rssi)
-        console.log(this.state.rssi)
+    onUID(beacon) {
         this.addRssisValue(beacon.rssi)
+    }
+
+    startScan() {
+        console.log("start scanning")
+        Eddystone.startScanning()
+        this.setState({ scaning: true })
+    }
+
+    stopScan() {
+        console.log("stop scanning")
+        Eddystone.stopScanning()
+        this.setState({ scaning: false })
+    }
+
+    addRssisValue(rssiValue) {
+        this.state.rssis.push(rssiValue)
     }
 
     async getAccessCoarseLocation() {
@@ -66,9 +64,9 @@ export default class ScanScreem extends React.Component {
                 }
             );
             if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                console.log("You can use the ACCESS_COARSE_LOCATION");
+                console.log("OK -> ACCESS_COARSE_LOCATION");
             } else {
-                console.log("ACCESS_COARSE_LOCATION permission denied");
+                console.log("NOT OK -> ACCESS_COARSE_LOCATION");
             }
         } catch (err) {
             console.warn(err);
@@ -88,9 +86,9 @@ export default class ScanScreem extends React.Component {
                 }
             );
             if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                console.log("You can use the ACCESS_FINE_LOCATION");
+                console.log("OK -> ACCESS_FINE_LOCATION");
             } else {
-                console.log("ACCESS_FINE_LOCATION permission denied");
+                console.log("NOT OK -> ACCESS_FINE_LOCATION");
             }
         } catch (err) {
             console.warn(err);
@@ -98,57 +96,59 @@ export default class ScanScreem extends React.Component {
     }
 
     getRssisAverage() {
+        console.log("lista:", this.state.rssis)
         let rssis = this.state.rssis.sort((a, b) => a - b)
 
         let lowMiddle = Math.floor((rssis.length - 1) / 2)
-        let highMiddle = Math.ceil((values.length - 1) / 2)
+        let highMiddle = Math.ceil((rssis.length - 1) / 2)
         let median = (rssis[lowMiddle] + rssis[highMiddle]) / 2
 
         return median
     }
 
     clearRssis() {
-        this.setState({rssis: []})
+        this.setState({ rssis: [] })
     }
 
-    doTheBlaBlaBla(time=5000) {
+    doTheBlaBlaBla(time = 5000) {
         setInterval(() => {
-            console.log("rodando o setInverval")
-            let lastAverageRssi = this.state.averageRssi
-            this.setState({averageRssi: this.getRssisAverage()})
-            
-            // se a mediada de rssis anterior for maior que a atual, então não está se aproximando
-            if (lastAverageRssi > this.state.averageRssi) {
-                this.setState({approaching: false})
-            } else {
-                this.setState({approaching: true})
-            }
-            this.clearRssis()
-        }, time);
-    }
+            if (this.state.scaning) {
+                console.log("rodando o setInverval")
+                let lastAverageRssi = this.state.averageRssi
+                this.setState({ averageRssi: this.getRssisAverage() })
 
-    getAproaching() {
-        if (this.state.approaching) {
-            return "aproximando"
-        }
-        return "não aproximou"
+                // se a mediada de rssis anterior for maior que a atual, então não está se aproximando
+                // se a mediana de rssis anterior for menor que a atual, 
+                console.log("mediana- última:", lastAverageRssi, "atual:", this.state.averageRssi)
+                if (this.state.averageRssi >= lastAverageRssi) {
+                    console.log("Aproximou")
+                    this.setState({ approachingScreem: "aproximando" })
+                } else {
+                    console.log("Não aproximou")
+                    this.setState({ approachingScreem: "não aproximando" })
+                }
+                this.clearRssis()
+            }
+        }, time);
     }
 
     render() {
         return (
             <View>
                 <View style={styles.header}>
-                    <Text style={styles.rssiText}>{this.getAproaching()}</Text>
+                    <Text style={styles.rssiText}>{this.state.approachingScreem}</Text>
                 </View>
                 <View>
-                    <Pressable
-                        onPress={() => this.startScanning() }>
-                        <Text style={[styles.button, styles.infoButton]}>Escanear: {"teste"}</Text>
-                    </Pressable>
-                    <Pressable
-                        onPress={() => { this.stopScanning() }}>
-                        <Text style={[styles.button, styles.cancelButton]}>Cancelar</Text>
-                    </Pressable>
+                    <TouchableOpacity
+                        onPress={() => this.startScan()}
+                        style={[styles.button, styles.infoButton]}>
+                        <Text style={styles.buttonText}>Escanear: {"teste"}</Text>
+                    </TouchableOpacity >
+                    <TouchableOpacity
+                        onPress={() => this.stopScan()}
+                        style={[styles.button, styles.cancelButton]}>
+                        <Text style={[styles.buttonText, { fontWeight: "bold" }]}>Cancelar</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
         )
@@ -164,22 +164,24 @@ const styles = StyleSheet.create({
     button: {
         backgroundColor: pink,
         alignSelf: "center",
-        color: "white",
         width: 300,
         height: 80,
         position: "relative",
+    },
+    buttonText: {
+        flex: 1,
+        color: "white",
+        fontSize: 30,
         textAlign: "center",
-        textAlignVertical: "center"
+        textAlignVertical: "center",
+        justifyContent: "center"
     },
     infoButton: {
         top: -20,
-        fontSize: 24,
+        borderTopLeftRadius: 10,
         borderTopRightRadius: 10,
-        borderTopLeftRadius: 10
     },
     cancelButton: {
-        fontSize: 48,
-        fontWeight: "bold",
         borderBottomLeftRadius: 10,
         borderBottomRightRadius: 10,
     },
