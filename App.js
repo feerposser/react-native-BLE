@@ -1,26 +1,32 @@
-import { createAppContainer } from 'react-navigation';
-import { createStackNavigator } from "react-navigation-stack"
+import React from "react"
+
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 
 import Home from "./src/components/Home"
 import ScanScreem from "./src/components/ScanScreem"
 
-const AppNavigator = createStackNavigator(
-  {
-    "ScanScreem": {
-      screen: ScanScreem,
-      navigationOptions: {
-        headerShown: false,
-      }
-    },
-    "Home": {
-      screen: Home,
-      navigationOptions: {
-        headerShown: false,
-      }
-    },
-  }
-)
+const Stack = createStackNavigator()
 
-const AppContainer = createAppContainer(AppNavigator)
+function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator>
 
-export default AppContainer
+        <Stack.Screen
+          name="Home"
+          component={Home}
+          options={{ headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="ScanScreem"
+          component={ScanScreem}
+          options={{ headerShown: false }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  )
+}
+
+export default App
