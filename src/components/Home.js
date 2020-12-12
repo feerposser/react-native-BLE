@@ -1,5 +1,7 @@
 import React from "react"
-import { View, StyleSheet, Dimensions, Image, TouchableOpacity, Text, Modal, Alert, TextInput } from "react-native"
+import { View, StyleSheet, Dimensions, Image, TouchableOpacity, Text, Modal, Alert, TextInput, Pressable } from "react-native"
+import * as firebase from "firebase"
+import "firebase/firestore"
 
 import { orange, pink } from "./Colors"
 import ScanText from "./ScanText"
@@ -9,18 +11,90 @@ export default class Home extends React.Component {
     constructor(props) {
         super(props)
 
+        this.firebaseConfiguration()
+
         this.state = {
             modalVisibility: false,
-            nomeDog: ""
+            dogName: "",
+            dogEddystoneUID: "edd1ebeac04e5defa017",
+            dogsList: []
         }
+    }
+
+    componentDidMount() {
+        this.loadDogs()
+    }
+
+    loadDogs() {
+        var db = firebase.database()
+        db.ref("/animals/dogs").on("value", querySnapShot => {
+            let data = []
+            querySnapShot.forEach((child) => {
+                data.push({
+                    dogName: child.val().dogName,
+                    dogEddystoneUID: child.val().dogEddystoneUID
+                })
+            })
+            this.setState({ dogsList: data })
+            console.log(":->", this.state.dogsList)
+        })
+    }
+
+    firebaseConfiguration() {
+        if (!firebase.apps.length) {
+            var firebaseConfig = {
+                apiKey: "AIzaSyD5BZxtytDS6mD2mvQfdLxpH4EWkArHlXw",
+                authDomain: "finp-59b18.firebaseapp.com",
+                databaseURL: "https://finp-59b18-default-rtdb.firebaseio.com",
+                projectId: "finp-59b18",
+                storageBucket: "finp-59b18.appspot.com",
+                messagingSenderId: "705246181991",
+                appId: "1:705246181991:web:1a414c04a7c46f375a32c2",
+                measurementId: "G-XSR0GMS7Z1"
+            }
+            firebase.initializeApp(firebaseConfig)
+        }
+    }
+
+    registerDog() {
+        let db = firebase.database()
+        console.log("-->", this.state.dogName)
+        db.ref("/animals/dogs").push(
+            { dogName: this.state.dogName, dogEddystoneUID: this.state.dogEddystoneUID })
+            .then(() => {
+                console.log("deu certo")
+                this.setModalVisibility(false)
+            })
+            .catch(() => console.log("deu merda"))
     }
 
     setModalVisibility = (visibility) => {
         this.setState({ modalVisibility: visibility })
     }
 
-    onChangeHandler(field, value) {
-        this.setState({ field: value })
+    renderDog = () => {
+        const { dogsList } = this.state
+
+        const dogVisualization = dogsList.map(dog => {
+            return (
+                <View style={styles.topContent}>
+                    <Image
+                        style={styles.imagemDog}
+                        source={require("../img/lost-dog.png")}
+                    />
+                    {/* <ScanText name={dog.dogName} /> */}
+                    <Pressable onPress={() => { this.props.navigation.navigate("ScanScreem") }}>
+                        <Text style={styles.scanText}>Escanear: {dog.dogName}</Text>
+                    </Pressable >
+                </View>
+            )
+        })
+
+        return (
+            <View>
+                { dogVisualization }
+            </View>
+        )
     }
 
     render() {
@@ -33,19 +107,30 @@ export default class Home extends React.Component {
                     visible={this.state.modalVisibility}
                     onRequestClose={() => { Alert.alert("Modal fechado") }}>
                     <View>
-                        <View style={[styles.header, { backgroundColor: orange }]} />
-                        <Text style={styles.addDogText}>Adicionar Doguinho</Text>
-                        <TextInput
-                            placeholder="Nome"
-                            onChangeText={value => this.onChangeHandler("nomeDog", value)}
-                            style={styles.inputDogName}
-                        />
+                        <View style={[styles.header, { backgroundColor: orange }]}>
+                            <Text style={styles.addDogText}>Adicionar Doguinho</Text>
+                        </View>
+
                         <View>
-                            <TouchableOpacity>
-                                <Text>Adicionar</Text>
+                            <TextInput
+                                placeholder="Nome"
+                                placeholderTextColor={pink}
+                                // onChangeText={value => this.onChangeHandler("dogName", value)}
+                                onChangeText={value => this.setState({ dogName: value })}
+                                value={this.state.dogName}
+                                style={styles.inputDogName}
+                            />
+                            <TouchableOpacity
+                                style={[styles.button, { backgroundColor: orange, top: 230 }]}
+                                onPress={() => this.registerDog()}
+                            >
+                                <Text style={styles.textButton}>Confirmar</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity>
-                                <Text>Cancelar</Text>
+                            <TouchableOpacity
+                                style={[styles.button, { top: 250 }]}
+                                onPress={() => this.setModalVisibility(false)}
+                            >
+                                <Text style={styles.textButton}>Cancelar</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -53,15 +138,8 @@ export default class Home extends React.Component {
 
                 <View style={styles.header} />
 
-                <View style={styles.topContent}>
-                    <Image
-                        style={styles.imagemDog}
-                        source={require("../img/lost-dog.png")}
-                    />
-                    <ScanText
-                        name={"Esmeralda"}
-                    />
-                </View>
+                <this.renderDog />
+
                 <TouchableOpacity
                     onPress={() => this.setModalVisibility(true)} //his.props.navigation.navigate("ScanScreem")
                     style={styles.button}>
@@ -109,12 +187,33 @@ const styles = StyleSheet.create({
         width: 300,
         height: 50,
         top: 200,
+        borderStartWidth: 2,
+        borderEndWidth: 1,
+        borderTopWidth: 1,
+        borderLeftWidth: 1,
+        borderRightWidth: 1,
+        borderBottomWidth: 1,
         borderColor: pink,
         borderRadius: 5,
-        position: "relative"
+        alignSelf: "center",
+        color: pink,
+        backgroundColor: "white",
     },
     addDogText: {
-        position: "relative",
-        top: 200
+        color: "white",
+        fontSize: 24,
+        textAlign: "center",
+        textAlignVertical: "center",
+        flex: 1
+    },
+    scanText: {
+        color: "white",
+        fontSize: 24,
+        textAlign: "center",
+        backgroundColor: orange,
+        paddingTop: 20,
+        paddingBottom: 20,
+        borderBottomLeftRadius: 10,
+        borderBottomRightRadius: 10
     }
 })
